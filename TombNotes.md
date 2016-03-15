@@ -216,4 +216,37 @@ OpenUDID利用了一个非常巧妙的方法在不同程序间存储标示符 �
 		NS_ASSUME_NONNULL_END
 
 
+##  ios沙盒机制
+1. 每个应用程序都在自己的沙盒内
+1. 不能随意跨越自己的沙盒去访问别的应用程序沙盒的内容
+1. 应用程序向外请求或接收数据都需要经过权限认证  
+
+```objective-c
+//获取根目录，前往homePath可以看到该文件夹下有Documents、Library、tmp三个文件夹。
+    NSString *homePath = NSHomeDirectory();
+```
+
+#### Documents 
+苹果建议将程序中创建的或在程序中浏览到的文件数据保存在该目录下，iTunes备份和恢复的时候会包括此目录；  
+```objective-c
+//获取Documents文件夹目录,第一个参数是说明获取Doucments文件夹目录，第二个参数说明是在当前应用沙盒中获取，所有应用沙盒目录组成一个数组结构的数据存放
+    NSArray *docPath = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    NSString *documentsPath = [docPath objectAtIndex:0];
+```
+
+#### Library 
+存储程序的默认设置或其它 状态信息；Library/Caches：存放缓存文件，iTunes不会备份此目录，此目录下文件不会在应用退出删除
+
+```objective-c
+//获取Cache目录
+    NSArray *cacPath = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
+    NSString *cachePath = [cacPath objectAtIndex:0];
+```
+#### tmp
+创建和存放临时文件的地方。
+
+```objective-c
+   NSString *tempPath = NSTemporaryDirectory();
+```
+
 
