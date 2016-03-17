@@ -248,5 +248,48 @@ OpenUDID利用了一个非常巧妙的方法在不同程序间存储标示符 �
 ```objective-c
    NSString *tempPath = NSTemporaryDirectory();
 ```
+## UIAppearance 的使用
+在iOS 5以前，自定义原生控件的外观并没有原生支持，因此开发人员感觉很麻烦。开发人员经常面临的问题是修改一个控件所有实例的外观。解决这个问题的正确方法是重写一遍控件。但由于这么做非常费时，一些开发人员开始覆盖或混写一些方法，如drawRect:  
 
+从iOS 5开始，苹果通过两个协议（UIAppearance和UIAppearanceContainer）规范了对许多UIKit控件定制的支持。所有遵循UIAppearance协议的UI控件通过定制都可以呈现各种外观。不仅如此，UIAppearance协议甚至允许开发者基于控件所属的区域指定不同的外观。也就是说，当某个控件包含在特定视图中时，可以指定它的外观（如UIBarButtonItem的tintColor）。也可以获取该控件类的外观代理对象，用该代理定制外观来实现，下面来看一个例子。  
+
+要定制应用中所有条形按钮的颜色，可以在UIBarButtonItem的外观代理中设置tintColor：
+```
+[[UIBarButtonItem  appearance]  setTintColor:[UIColor  redColor]];
+```
+注意，iOS 4的时候setTintColor方法就在UIBarButtonItem中了，但它只会作用到某个特定的控件实例，而不是所有的此类控件。借助外观代理对象，我们可以定制使用上述类创建的任意对象的外观。  
+
+同样，可以根据内部包含的视图采用如下方法来定制控件的外观：
+```
+[[UIBarButtonItem appearanceWhenContainedIn:[UINavigationBar class], nil] setTintColor:[UIColor redColor]];
+```
+第一个参数是以nil结尾的所有容器类的列表，包括UINavigatorBar、UIPopOverController等遵循UIAppearanceContainer协议的类。  
+
+#### UI_APPEARANCE_SELECTOR 
+从iOS 5开始，大多数UI元素都增加了对UIAppearance协议的支持。此外，iOS 5中类似于UISwitch的控件允许我们方便地将on开关的颜色变成设计师选定的颜色。现在，怎么确定哪些情况下能够通过UIKit的外观代理来定制所有元素（以及元素中的哪些属性）呢？有两种方式。老办法是查阅文档，另一个办法是大多数开发人员使用的快捷方式：读头文件。打开对应的UIKit元素的头文件，其中所有带有UI_APPEARANCE_SELECTOR标记的属性都支持通过外观代理来定制。举个例子，UINavigationBar.h中的tintColor属性带有UI_APPEARANCE_SELECTOR标记：
+```
+@property(nonatomic,retain) UIColor      *tintColor    UI_APPEARANCE_SELECTOR;
+```
+意味着可以调用
+```
+[[UINavigationBar   appearance]  setTintColor:newColor];
+```  
+
+我们也可以自定义支持appearance的方法或属性，例：
+```objective-c
+@interface Button:UIButton<UIAppearance>
+@property(nonatomic,strong)UIColor *bColor UI_APPEARANCE_SELECTOR;
+@end;
+@implementation Button
+-(void)setBColor:(UIColor *)bColor
+{
+    _bColor = bColor;
+    self.backgroundColor = _bColor;
+}
+```
+这样使用：
+```
+[Button appearance].bColor = [UIColor greenColor];
+```
+##### 请注意＊使用appearance设置UI效果最好采用全局的设置，在所有界面初始化前开始设置，否则可能失效。
 
