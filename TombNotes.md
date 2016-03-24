@@ -293,3 +293,55 @@ OpenUDID利用了一个非常巧妙的方法在不同程序间存储标示符 �
 ```
 ##### 请注意＊使用appearance设置UI效果最好采用全局的设置，在所有界面初始化前开始设置，否则可能失效。
 
+## +load和+initialize
+1、+ (void)initialize 消息是在该类接收到其第一个消息之前调用。关于这里的第一个消息需要特别说明一下，对于 NSObject 的 runtime 机制而言，其在调用 NSObject 的 + (void)load 消息不被视为第一个消息，但是，如果像普通函数调用一样直接调用 NSObject 的 + (void)load 消息，则会引起 + (void)initialize 的调用。反之，如果没有向 NSObject 发送第一个消息，+ (void)initialize 则不会被自动调用。  
+
+2、在应用程序的生命周期中，runtime 只会向每个类发送一次 + (void)initialize 消息，如果该类是子类，且该子类中没有实现 + (void)initialize 消息，或者子类显示调用父类实现 [super initialize], 那么则会调用其父类的实现。也就是说，父类的 + (void)initialize 可能会被调用多次。  
+
+3、如果类包含分类，且分类重写了initialize方法，那么则会调用分类的 initialize 实现，而原类的该方法实现不会被调用，这个机制同 NSObject 的其他方法(除 + (void)load 方法) 一样，即如果原类同该类的分类包含有相同的方法实现，那么原类的该方法被隐藏而无法被调用。  
+
+4、父类的 initialize 方法先于子类的 initialize 方法调用。
+```objective-c
+@interface People : NSObject
+
+@end
+
+@implementation People
+
++ (void)initialize {
+    NSLog(@"%s", __FUNCTION__);
+}
+
+@end
+
+@interface Student : People
+
+@end
+
+@implementation Student
+
++ (void)initialize {
+    NSLog(@"%s", __FUNCTION__);
+}
+
+@end
+
+@implementation ViewController
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    Student *student = [[Student alloc] init];
+}
+@end
+```
+输出结果如下：
+```objective-c
++[People initialize]
++[Student initialize]
+```
+1、+ (void)load 会在类或者类的分类添加到 Objective-c runtime 时调用，该调用发生在 application:willFinishLaunchingWithOptions: 调用之前调用。  
+
+2、父类的 +load 方法先于子类的 +load 方法调用，分类的 +load 方法先于类本身的 +load 方法调用。
+
+#### load使用示例
+示例1，见@sunnyxx大神的博客[Notification Once](http://blog.sunnyxx.com/2015/03/09/notification-once/ "Notification Once"),用于给AppDelegate瘦身。
+示例2，见博客[Method Swizzling和AOP实践](http://tech.glowing.com/cn/method-swizzling-aop/ "Method Swizzling和AOP实践")，在UIViewController的 +load 时期执行IMP替换，实现AOP。
