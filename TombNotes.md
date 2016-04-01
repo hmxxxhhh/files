@@ -345,3 +345,27 @@ OpenUDID利用了一个非常巧妙的方法在不同程序间存储标示符 �
 #### load使用示例
 示例1，见@sunnyxx大神的博客[Notification Once](http://blog.sunnyxx.com/2015/03/09/notification-once/ "Notification Once"),用于给AppDelegate瘦身。
 示例2，见博客[Method Swizzling和AOP实践](http://tech.glowing.com/cn/method-swizzling-aop/ "Method Swizzling和AOP实践")，在UIViewController的 +load 时期执行IMP替换，实现AOP。
+
+## NS_AVAILABLE_IOS、NS_DEPRECATED
+每当苹果添加新方法的时候，他们都会在方法声明的后面用一个很特殊的宏来标明哪些iOS版本支持它们。例如:
+```objective-c
+NS_AVAILABLE_IOS(5_0)
+```
+这告诉我们这个方法可以在ios5.0及以后的版本中使用，如果在比指定版本更老的版本中调用此方法就会引起奔溃。
+```objective-c
+NS_DEPRECATED_IOS(2_0,6_0)
+```
+这个宏中有两个版本号，前一个表明这个方法被引入时的iOS版本，后一个表明它被废弃时的iOS版本。被废气并不是这个方法不存在了，只是意味着我们应当考虑开始将相关的方法迁移到新的api上去。
+```objective-c
+NS_AVAILABLE(10_8,6_0)
+```
+这个宏告诉我们这个方法分别随mac os 10.8 和iOS6.0 被引入。和NS_DEPRECATED_IOS，也有一个宏叫NS_DEPRECATED，它的参数复杂些
+```objective-c
+NS_DEPRECATED(10_0,10_6,2_0,6_0)
+```
+这里表示这个方法随着Mac os 10.0和iOS2.0被引入，在Mac os 10.6和iOS6.0被废弃.
+
+
+
+
+
