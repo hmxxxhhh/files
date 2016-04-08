@@ -366,6 +366,53 @@ NS_DEPRECATED(10_0,10_6,2_0,6_0)
 这里表示这个方法随着Mac os 10.0和iOS2.0被引入，在Mac os 10.6和iOS6.0被废弃.
 
 
+## addChildViewController 注意事项
+
+```objective-c
+- (void) displayContentController: (UIViewController*) content {
+   [self addChildViewController:content];
+   content.view.frame = [self frameForContentController];
+   [self.view addSubview:self.currentClientView];
+   [content didMoveToParentViewController:self];
+}
+```
+```objective-c
+- (void) hideContentController: (UIViewController*) content {
+   [content willMoveToParentViewController:nil];
+   [content.view removeFromSuperview];
+   [content removeFromParentViewController];
+}
+
+```
+```objective-c
+- (void)cycleFromViewController: (UIViewController*) oldVC
+               toViewController: (UIViewController*) newVC {
+   // Prepare the two view controllers for the change.
+   [oldVC willMoveToParentViewController:nil];
+   [self addChildViewController:newVC];
+ 
+   // Get the start frame of the new view controller and the end frame
+   // for the old view controller. Both rectangles are offscreen.
+   newVC.view.frame = [self newViewStartFrame];
+   CGRect endFrame = [self oldViewEndFrame];
+ 
+   // Queue up the transition animation.
+   [self transitionFromViewController: oldVC toViewController: newVC
+        duration: 0.25 options:0
+        animations:^{
+            // Animate the views to their final positions.
+            newVC.view.frame = oldVC.view.frame;
+            oldVC.view.frame = endFrame;
+        }
+        completion:^(BOOL finished) {
+           // Remove the old view controller and send the final
+           // notification to the new view controller.
+           [oldVC removeFromParentViewController];
+           [newVC didMoveToParentViewController:self];
+        }];
+}
+
+```
 
 
 
