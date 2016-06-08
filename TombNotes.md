@@ -414,5 +414,17 @@ NS_DEPRECATED(10_0,10_6,2_0,6_0)
 
 ```
 
+# OC变量的作用域
 
+#### protected
+Methods defined in the class and any subclasses can directly access the instance variables that follow.This is the default case. 该类和所有的子类中的方法可以直接访问这样的变量，这是默认的。
+
+#### private
+Methods defined in the class can directly access the instance variables that follow, but subclasses cannot. 该类中的方法可以访问这样的变量，子类不可以。
+
+#### public
+Methods defined in the class and any other classes or modules can di- rectly access the instance variables that follow. 除了自己和子类中的方法外，也可以被其他类或者其他模块中的方法所访问。开放性最大。
+
+#### package 
+For 64-bit images, the instance variable can be accessed anywhere within the image that implements the class. 对于64位图像，这样的成员变量可以在实现这个类的图像中随意访问。
 
