@@ -10,3 +10,5 @@
 ## 代码统计插件
 - [CLOC](https://segmentfault.com/a/1190000002547015 "CLOC")
 
+## 一键打包插件
+- [AMAppExportToIPA-Xcode-Plugin](https://github.com/MellongLau/AMAppExportToIPA-Xcode-Plugin "AMAppExportToIPA-Xcode-Plugin")
