@@ -1,0 +1,32 @@
+curl是一个访问url的工具，可以用他构造http request报文，且可以解析服务器返回的http response，额外还支持cookie特性，可以用curl完成web浏览器的基本功能。当然curl还支持HTTPS/FTP/FTPS/TELNET/LDAP等协议。本文只探讨其强大的HTTP功能。
+通用语法：
+curl [option] [URL...]
+在处理URL的时候其支持类型于SHELL的名称扩展功能，如http://any.org/archive[1996-1999]/vol[1-4]/part{a,b,c}.html可以生成多个期望的URL
+下面介绍选项功能：
+不带任何参数时 curl 将返回指定url中的数据并打印在屏幕上
+-o out  将指定curl返回保存为out文件，内容从html/jpg到各种MIME类型文件
+-O  按服务器上的名称保存下载的文件
+-r/--range  from-to 下载指定range内的数据
+-C 在保存文件时进行续传
+-A/--user-agent  <ua>  指定发送请求的用户代理 如 curl -A My-Agent/1.0.0 www.apple.com 
+-x  ip:port 指定使用的http代理，如curl -x 192.168.1.1:8080 www.apple.com
+-D head.txt  将服务器的返回的header保存为文件，头部的cookie也可被保存   curl -D header.txt www.apple.com
+-c <file> 保存服务器的cookie文件
+-b/--cookie  <name=data>   向服务器提交cookie，若无=则name视为文件名  curl -b cookie.txt www.apple.com
+-e url  设置引用头的值
+-T localfile  向服务器PUT文件 如curl -T 1.mp3  www.apple.com/upload.PHP
+-d <key=value>  向服务器POST表单数据 如curl -d "order=111&count=2" http://www.apple.com/buy
+-F <key=value> 向服务器POST表单 curl -F "web=@index.html;type=text/html" url.com
+如果希望从本地文件中获取表单数据，则在文件名前加@ 如 curl -d @data.xml http://www.apple.com
+若希望从标准输入获取则用curl -d - http://www.apple.com
+-E cert.pem  指定本地证书
+-H <header:value>  为HTTP请求设置任意header及值。如curl -H "Connection:keep-alive" http://www.apple.com
+-I  构造一个HEAD请求
+-X/--request method 用户定义的HTTP请求方法名如 curl -X GET www.baidu.com
+--compressed 采用压缩方式接收返回数据
+--connect-timeout <s> 设置超时时间
+-v 详细输出，包含请求和响应的首部
+--retry num
+--retry timeo 指定重试的次数和间隔
+--tcp-nodelay 打开TCP_NODELAY选项  不进行捎带确认
+环境 变量：http_proxy [protocol://]<host>[:port]
