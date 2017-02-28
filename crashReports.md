@@ -16,10 +16,11 @@
 2. 右击显示包类容，dSYM文件在/dSYMs文件下（有时候该文件夹下有多个文件）如下：![Mou icon](https://github.com/hmxxxhhh/images/blob/master/crash3.png?raw=true)其中前两个文件分别为armv7和arm64下的，最后一个我认为是两者合并后的。
 3. app文件![Mou icon](https://github.com/hmxxxhhh/images/blob/master/crash4.png?raw=true)
 
-##### symbolicatecrash工具
+##### symbolicatecrash工具   
 
-网上看了好多，但是发现在我的电脑都找不到，在Xcode7.2下，其路径为：
-/Applications/Xcode.app/Contents/SharedFrameworks/DTDeviceKitBase.framework/Versions/A/Resources/symbolicatecrash
+可以通过命令查找：find /Applications/Xcode.app -name symbolicatecrash -type f
+在Xcode7.2下，其路径为：
+/Applications/Xcode.app/Contents/SharedFrameworks/DTDeviceKitBase.framework/Versions/A/Resources/symbolicatecrash  
 
 ##### 符号化
 
