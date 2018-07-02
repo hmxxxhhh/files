@@ -1,0 +1,231 @@
+
+众所周知，NSObject类是Objective-C中大部分类的基类。但不是很多人知道除了NSObject之外的另一个基类——NSProxy
+
+NS_ROOT_CLASS
+@interface NSProxy <NSObject>
+这个奇怪的类是干嘛的？请允许我做一个黑人问号脸
+马上查了一下Apple的官方文档：NSProxy
+
+NSProxy is an abstract superclass defining an API for objects that act as stand-ins for other objects or for objects that don’t exist yet. Typically, a message to a proxy is forwarded to the real object or causes the proxy to load (or transform itself into) the real object. Subclasses of NSProxy can be used to implement transparent distributed messaging (for example, NSDistantObject) or for lazy instantiation of objects that are expensive to create.
+
+总的来说，NSProxy是一个虚类，你可以通过继承它，并重写这两个方法以实现消息转发到另一个实例
+
+- (void)forwardInvocation:(NSInvocation *)anInvocation;
+- (NSMethodSignature *)methodSignatureForSelector:(SEL)sel;
+现在NSProxy的真面目终于浮出水面：负责将消息转发到真正的target的代理类。举个例子，你想要卖一件二手物品，但是你并不想直接跟卖家接触（直接向target发消息），这时你去找了一个第三方，你告诉这个第三方你要买什么、出多少钱买、什么时候要等（向代理发消息），第三方再去跟卖家接触并把这些信息转告卖家（转发消息给真实的target），最后通过第三方去完成这个交易。
+
+了解完NSProxy是是什么以后，那么它究竟能帮我们干些什么呢？
+
+通过NSProxy在Objective-C中模拟多继承
+多继承在编程中可以说是比较有用的特性。举个例子，原本有两个相互独立的类A和类B，它们各自继承各自的父类，项目进行地好好的，突然有一天产品经理过来告诉你，我要在下个版本加一个xxxxx的特性，非常紧急。一脸懵逼的你发现如果要实现这个特性，你需要对类A以及其父类作很大的修改，代价非常之高。突然你意识到原来类B的父类已经有类似的功能，你只需要让类A继承于类B的父类并重写其某些方法就能实现，这样做高效且低风险，于是你屁颠屁颠地撸起了代码。
+
+可是，Objective-C却不支持这样一个强大的特性。不过NSProxy可以帮我们在某种程度上（这只是一个模拟的多继承，并不是完全的多继承）解决这个问题：
+
+现在假设我们想要去买书，但是我懒癌犯了，不想直接去书店（供应商）买，如果有一个跑腿的人（经销商）帮我去书店买完，我再跟他买。同时，我买完书又想买件衣服，我又可以很轻松地在他那里买到一件衣服（多继承）。
+
+首先，我们定义BookProvider类与ClothesProvider类作为基类。
+
+//  TDBookProvider.h
+
+#import <Foundation/Foundation.h>
+
+@protocol TDBookProviderProtocol <NSObject>
+
+- (void)purchaseBookWithTitle:(NSString *)bookTitle;
+
+@end
+
+@interface TDBookProvider : NSObject
+
+@end
+//  TDClothesProvider.h
+
+#import <Foundation/Foundation.h>
+
+typedef NS_ENUM (NSInteger, TDClothesSize){
+    TDClothesSizeSmall = 0,
+    TDClothesSizeMedium,
+    TDClothesSizeLarge
+};
+
+@protocol TDClothesProviderProtocol <NSObject>
+
+- (void)purchaseClothesWithSize:(TDClothesSize )size;
+
+@end
+
+@interface TDClothesProvider : NSObject
+
+@end
+这里要注意：一定要通过protocol来声明接口，而不是直接在类的@interfere中定义。因为通过protocol来声明接口，然后让proxy类遵循此协议，可以骗过编译器防止编译器提示proxy类未声明接口的错误。这个问题下面可以看到。
+
+然后是这两个类的实现
+
+//  TDBookProvider.m
+
+#import "TDBookProvider.h"
+
+@interface TDBookProvider () <TDBookProviderProtocol>
+
+@end
+@implementation TDBookProvider
+
+- (void)purchaseBookWithTitle:(NSString *)bookTitle{
+    NSLog(@"You've bought \"%@\"",bookTitle);
+}
+
+@end
+//  TDClothesProvider.m
+
+#import "TDClothesProvider.h"
+
+@interface TDClothesProvider () <TDClothesProviderProtocol>
+
+@end
+
+@implementation TDClothesProvider
+
+- (void)purchaseClothesWithSize:(TDClothesSize )size{
+    NSString *sizeStr;
+    switch (size) {
+        case TDClothesSizeLarge:
+            sizeStr = @"large size";
+            break;
+        case TDClothesSizeMedium:
+            sizeStr = @"medium size";
+            break;
+        case TDClothesSizeSmall:
+            sizeStr = @"small size";
+            break;
+        default:
+            break;
+    }
+    NSLog(@"You've bought some clothes of %@",sizeStr);
+}
+
+@end
+现在两个Provider的类写完，我们可以直接向供应商买东西了，但这跟我们的需求还有很大差异，我们需要一个中间的经销商
+
+//  TDDealerProxy.h
+
+#import <Foundation/Foundation.h>
+#import "TDBookProvider.h"
+#import "TDClothesProvider.h"
+
+@interface TDDealerProxy : NSProxy <TDBookProviderProtocol, TDClothesProviderProtocol>
+
++ (instancetype )dealerProxy;
+
+@end
+这里有两个要注意的问题：
+1、TDDealerProxy这个子类必须要遵循之前定义的两个协议TDBookProviderProtocol与TDClothesProviderProtocol，目的是骗过编译器，让编译器认为这个类实现了上面两个协议
+2、NSProxy类是没有init方法的，也就是说如果我们要获得一个NSProxy的实例，代码只需要这样：
+
+NSProxy *proxyInstance = [NSProxy alloc];
+接下来看实现文件
+
+//  TDDealerProxy.m
+
+#import "TDDealerProxy.h"
+#import <objc/runtime.h>
+
+@interface TDDealerProxy () {
+    TDBookProvider          *_bookProvider;
+    TDClothesProvider       *_clothesProvider;
+    NSMutableDictionary     *_methodsMap;
+}
+@end
+
+@implementation TDDealerProxy
+
+#pragma mark - class method
++ (instancetype)dealerProxy{
+    return [[TDDealerProxy alloc] init];
+}
+
+#pragma mark - init
+- (instancetype)init{
+    _methodsMap = [NSMutableDictionary dictionary];
+    _bookProvider = [[TDBookProvider alloc] init];
+    _clothesProvider = [[TDClothesProvider alloc] init];
+
+    //映射target及其对应方法名
+    [self _registerMethodsWithTarget:_bookProvider];
+    [self _registerMethodsWithTarget:_clothesProvider];
+
+    return self;
+}
+
+#pragma mark - private method
+- (void)_registerMethodsWithTarget:(id )target{
+    
+    unsigned int numberOfMethods = 0;
+    
+    //获取target方法列表
+    Method *method_list = class_copyMethodList([target class], &numberOfMethods);
+    
+    for (int i = 0; i < numberOfMethods; i ++) {
+        //获取方法名并存入字典
+        Method temp_method = method_list[i];
+        SEL temp_sel = method_getName(temp_method);
+        const char *temp_method_name = sel_getName(temp_sel);
+        [_methodsMap setObject:target forKey:[NSString stringWithUTF8String:temp_method_name]];
+    }
+    
+    free(method_list);
+}
+#pragma mark - NSProxy override methods
+- (void)forwardInvocation:(NSInvocation *)invocation{
+    //获取当前选择子
+    SEL sel = invocation.selector;
+    
+    //获取选择子方法名
+    NSString *methodName = NSStringFromSelector(sel);
+    
+    //在字典中查找对应的target
+    id target = _methodsMap[methodName];
+    
+    //检查target
+    if (target && [target respondsToSelector:sel]) {
+        [invocation invokeWithTarget:target];
+    } else {
+        [super forwardInvocation:invocation];
+    }
+}
+
+- (NSMethodSignature *)methodSignatureForSelector:(SEL)sel{
+    //获取选择子方法名
+    NSString *methodName = NSStringFromSelector(sel);
+    
+    //在字典中查找对应的target
+    id target = _methodsMap[methodName];
+
+    //检查target
+    if (target && [target respondsToSelector:sel]) {
+        return [target methodSignatureForSelector:sel];
+    } else {
+        return [super methodSignatureForSelector:sel];
+    }
+}
+
+@end
+
+大功告成，现在我们的经销商也有了，最后要做的就是告诉经销商我们要买什么书跟什么衣服了（发消息）
+
+
+- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+    
+    TDDealerProxy *dealerProxy = [TDDealerProxy dealerProxy];
+    [dealerProxy purchaseBookWithTitle:@"Swift 100 Tips"];
+    [dealerProxy purchaseClothesWithSize:TDClothesSizeMedium];
+
+    // Override point for customization after application launch.
+    return YES;
+}
+运行看看log：
+
+2016-08-06 01:10:27.095 TDProxyDemo[37732:924470] You've bought "Swift 100 Tips"
+2016-08-06 01:10:27.095 TDProxyDemo[37732:924470] You've bought some clothes of medium size
+Bravo！Demo地址戳我
+
+总的来说，NSProxy这个在日常开发者很少见的类，的确有着它奇淫之处，这里推荐几个NSProxy相关的实践
