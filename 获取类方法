@@ -1,0 +1,29 @@
+Class c = NSClassFromString(@"MApiHelper");
+            NSMethodSignature *sigOfPrintStr = [c methodSignatureForSelector:@selector(sharedHelper)];
+            NSInvocation *invocationOfPrintStr = [NSInvocation invocationWithMethodSignature:sigOfPrintStr];
+            [invocationOfPrintStr setTarget:c];
+            [invocationOfPrintStr setSelector:@selector(sharedHelper)];
+            void *value;
+            [invocationOfPrintStr invoke];
+            [invocationOfPrintStr getReturnValue:&value];
+            // 获取 [MApiHelper sharedHelper]对象
+            id helper = (__bridge id)value;
+            
+            // helper 设置isChinaUser yes
+            NSMethodSignature *sig2 = [helper methodSignatureForSelector:@selector(setIsChinaUser:)];
+            NSInvocation *inv2 = [NSInvocation invocationWithMethodSignature:sig2];
+            [inv2 setTarget:helper];
+            BOOL b = YES;
+            [inv2 setArgument:&b atIndex:2];
+            [inv2 setSelector:@selector(setIsChinaUser:)];
+            [inv2 invoke];
+            
+            // helper 设置isChinaUser no
+            NSMethodSignature *sig3 = [helper methodSignatureForSelector:@selector(setIsChinaUser:)];
+            NSInvocation *inv3 = [NSInvocation invocationWithMethodSignature:sig3];
+            [inv3 setTarget:helper];
+             b = NO;
+            [inv3 setArgument:&b atIndex:2];
+            [inv3 setSelector:@selector(setIsChinaUser:)];
+            
+            [inv3 invoke];
